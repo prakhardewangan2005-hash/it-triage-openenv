@@ -1,0 +1,86 @@
+# openenv.yaml — OpenEnv Environment Specification
+# Validated via: openenv validate
+
+name: it-helpdesk-triage
+version: "1.0.0"
+description: >
+  A production-grade OpenEnv RL training environment that simulates an enterprise
+  IT Service Desk. An AI agent receives real-world IT support tickets and must
+  triage them through classification, priority assignment, team routing, incident
+  detection, escalation decisions, and remediation planning.
+  Three tasks of increasing difficulty expose progressively more complex
+  multi-ticket reasoning, culminating in cascading-incident management.
+
+author: ""
+license: "Apache-2.0"
+
+tags:
+  - openenv
+  - enterprise-ai
+  - it-operations
+  - incident-management
+  - nlp
+  - sequential-decision-making
+
+environment:
+  type: sequential
+  observation_type: Observation
+  action_type: TriageAction
+  reward_range: [0.0, 1.0]
+  reward_type: dense
+  episode_termination: queue_exhausted_or_max_steps
+
+tasks:
+  - id: basic_triage
+    description: "Classify and triage 5 straightforward IT support tickets (category, priority, team)."
+    difficulty: easy
+    max_steps: 10
+    ticket_count: 5
+    grader_weights:
+      category: 0.40
+      priority: 0.35
+      routing:  0.25
+
+  - id: priority_routing
+    description: >
+      Handle 5 complex enterprise tickets requiring correct priority escalation,
+      incident detection across the queue, and management escalation decisions.
+    difficulty: medium
+    max_steps: 10
+    ticket_count: 5
+    grader_weights:
+      category:   0.28
+      priority:   0.22
+      routing:    0.18
+      incident:   0.18
+      escalation: 0.14
+
+  - id: incident_escalation
+    description: >
+      Manage a cascading PostgreSQL WAL-corruption major incident.
+      7 tickets: 5 are incident symptoms, 2 are unrelated noise.
+      Agent must declare the incident, link tickets, and provide step-by-step
+      remediation for every P1 ticket.
+    difficulty: hard
+    max_steps: 15
+    ticket_count: 7
+    grader_weights:
+      category:   0.20
+      priority:   0.18
+      routing:    0.14
+      incident:   0.20
+      escalation: 0.12
+      resolution: 0.16
+
+endpoints:
+  health: "GET  /"
+  reset:  "POST /reset"
+  step:   "POST /step"
+  state:  "GET  /state"
+  tasks:  "GET  /tasks"
+
+runtime:
+  framework: fastapi
+  port: 7860
+  language: python
+  python_version: "3.11"
